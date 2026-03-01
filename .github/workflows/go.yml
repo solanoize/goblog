@@ -16,7 +16,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5 # Pakai v5, lebih stabil & cache-nya lebih jago
       with:
-        go-version: '1.23' # Update ke versi yang lebih modern (minimal 1.22/1.23)
+        go-version: '1.25.6' # Update ke versi yang lebih modern (minimal 1.22/1.23)
         cache: true        # Aktifkan cache biar build berikutnya lebih ngebut
 
     - name: Install Dependencies
