@@ -7,7 +7,7 @@ A simple blogging application API built with Go.
 
 - [x] User registration
 - [x] JWT authentication
-- [ ] Create and publish blog posts
+- [x] Create and publish blog posts
 - [ ] Clean and minimal design
 - [ ] Fast performance
 
