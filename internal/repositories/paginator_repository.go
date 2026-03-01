@@ -19,8 +19,8 @@ func (p *paginatorRepository) Apply(db *gorm.DB, page int, limit int) func(db *g
 		}
 
 		switch {
-		case limit > 100:
-			limit = 100 // Batasin maksimal 100 data per request biar server ga jebol
+		case limit > p.MaxLimit:
+			limit = p.MaxLimit // Batasin maksimal "max limit" data per request
 		case limit <= 0:
 			limit = 10 // Default 10 data kalau ga diisi
 		}
