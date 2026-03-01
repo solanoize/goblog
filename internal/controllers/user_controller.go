@@ -67,7 +67,7 @@ func (u *userController) Me(w http.ResponseWriter, r *http.Request) {
 func (u *userController) SignIn(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var userSignInDTO dtos.UserSignInDTO
-	var userTokenResponseDTO dtos.UserTokenResponseDTO
+	var token string
 
 	err = json.NewDecoder(r.Body).Decode(&userSignInDTO)
 	if err != nil {
@@ -85,7 +85,7 @@ func (u *userController) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userTokenResponseDTO, err = u.UserUseCase.SignIn(userSignInDTO.Email, userSignInDTO.Password)
+	token, err = u.UserUseCase.SignIn(userSignInDTO)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -95,7 +95,7 @@ func (u *userController) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(userTokenResponseDTO)
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 
 }
 

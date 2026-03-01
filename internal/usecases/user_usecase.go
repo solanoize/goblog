@@ -12,7 +12,7 @@ import (
 
 type UserUseCase interface {
 	Register(userRegisterDTO dtos.UserRegisterDTO) (dtos.UserResponseDTO, error)
-	SignIn(email string, password string) (dtos.UserTokenResponseDTO, error)
+	SignIn(userSignInDTO dtos.UserSignInDTO) (string, error)
 	Me(id uint) (dtos.UserResponseDTO, error)
 	GetAuthUseCase() AuthUseCase
 	All(page int, limit int, search string) ([]dtos.UserResponseDTO, int64, error)
@@ -87,28 +87,28 @@ func (u *userUseCase) Register(userRegisterDTO dtos.UserRegisterDTO) (dtos.UserR
 }
 
 // SignIn implements [UserUseCase].
-func (u *userUseCase) SignIn(email string, password string) (dtos.UserTokenResponseDTO, error) {
+func (u *userUseCase) SignIn(userSignInDTO dtos.UserSignInDTO) (string, error) {
 	var err error
 	var user models.User
-	var userTokenResponseDTO dtos.UserTokenResponseDTO
+	var token string
 
-	user, err = u.UserRepository.FindByEmail(email)
+	user, err = u.UserRepository.FindByEmail(userSignInDTO.Email)
 	if err != nil {
 		u.Logger.Println(err)
-		return userTokenResponseDTO, errors.New("Email belum terdaftar.")
+		return token, errors.New("Email belum terdaftar.")
 	}
 
-	err = u.AuthUseCase.ComparePassword(password, user.Password)
+	err = u.AuthUseCase.ComparePassword(userSignInDTO.Password, user.Password)
 	if err != nil {
-		return userTokenResponseDTO, err
+		return token, err
 	}
 
-	userTokenResponseDTO.Token, err = u.AuthUseCase.GenerateToken(user)
+	token, err = u.AuthUseCase.GenerateToken(user)
 	if err != nil {
-		return userTokenResponseDTO, err
+		return token, err
 	}
 
-	return userTokenResponseDTO, nil
+	return token, nil
 }
 
 func NewUserUseCase(logger *log.Logger, userRepository repositories.UserRepository) UserUseCase {

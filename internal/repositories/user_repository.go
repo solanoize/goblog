@@ -8,7 +8,6 @@ import (
 
 type UserRepository interface {
 	FindAll(page int, limit int, search string) ([]models.User, int64, error)
-	Paginate(page int, limit int) func(db *gorm.DB) *gorm.DB
 	FindById(id uint) (models.User, error)
 	FindByEmail(email string) (models.User, error)
 	Create(user models.User) (models.User, error)
@@ -17,26 +16,8 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	DB *gorm.DB
-}
-
-func (u *userRepository) Paginate(page int, limit int) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		// Validasi biar nggak error kalau user masukin angka ngaco
-		if page <= 0 {
-			page = 1
-		}
-
-		switch {
-		case limit > 100:
-			limit = 100 // Batasin maksimal 100 data per request biar server ga jebol
-		case limit <= 0:
-			limit = 10 // Default 10 data kalau ga diisi
-		}
-
-		offset := (page - 1) * limit
-		return db.Offset(offset).Limit(limit)
-	}
+	DB                  *gorm.DB
+	PaginatorRepository PaginatorRepository
 }
 
 // Create implements [UserRepository].
@@ -53,36 +34,22 @@ func (u *userRepository) Delete(id uint) error {
 
 // FindAll implements [UserRepository].
 func (u *userRepository) FindAll(page int, limit int, search string) ([]models.User, int64, error) {
-	var query *gorm.DB = u.DB.Model(&models.User{})
-	var paginate func(db *gorm.DB) *gorm.DB = func(db *gorm.DB) *gorm.DB {
-		// Validasi biar nggak error kalau user masukin angka ngaco
-		if page <= 0 {
-			page = 1
-		}
+	var err error
+	var query *gorm.DB
+	var totalCount int64
+	var searchParams string
+	var users []models.User
 
-		switch {
-		case limit > 100:
-			limit = 100 // Batasin maksimal 100 data per request biar server ga jebol
-		case limit <= 0:
-			limit = 10 // Default 10 data kalau ga diisi
-		}
-
-		offset := (page - 1) * limit
-		return db.Offset(offset).Limit(limit)
-	}
+	query = u.DB.Model(&models.User{})
 
 	if search != "" {
-		var searchParams string = "%" + search + "%"
+		searchParams = "%" + search + "%"
 		query = query.Where("username LIKE ? OR email LIKE ?", searchParams, searchParams)
 	}
 
-	var totalCount int64
 	query.Count(&totalCount)
 
-	var err error
-	var users []models.User
-
-	err = query.Scopes(paginate).Find(&users).Error
+	err = query.Scopes(u.PaginatorRepository.Apply(u.DB, page, limit)).Find(&users).Error
 
 	return users, totalCount, err
 }
@@ -116,5 +83,8 @@ func (u *userRepository) Update(user models.User) (models.User, error) {
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
-	return &userRepository{DB: db}
+	return &userRepository{
+		DB:                  db,
+		PaginatorRepository: NewPaginatorRepository(100),
+	}
 }

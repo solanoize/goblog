@@ -10,4 +10,5 @@ type User struct {
 	IsAdmin  bool   `gorm:"default:false"`
 	IsStaff  bool   `gorm:"default:false"`
 	Active   bool   `gorm:"default:true"`
+	Posts    []Post `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
