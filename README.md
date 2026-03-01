@@ -68,11 +68,45 @@ The application will be accessible at `http://localhost:5000`
 
 ```
 goblog/
+├── docker-compose.yaml
+├── go.mod
+├── go.sum
 ├── main.go
-├── handlers/
-├── models/
-├── templates/
-└── README.md
+├── README.md
+├── internal/
+│   ├── controllers/
+│   │   └── user_controller.go
+│   ├── dtos/
+│   │   ├── pagination_response_dto.go
+│   │   ├── user_dto.go
+│   │   ├── user_register_dto.go
+│   │   ├── user_response_dto.go
+│   │   ├── user_signin_dto.go
+│   │   └── user_token_response_dto.go
+│   ├── filters/
+│   │   ├── pagination_filter.go
+│   │   ├── search_filter.go
+│   │   └── user_filter.go
+│   ├── mappers/
+│   │   ├── user_register_mapper.go
+│   │   ├── user_response_mapper.go
+│   │   └── user_signin_mapper.go
+│   ├── middlewares/
+│   │   └── auth_middleware.go
+│   ├── models/
+│   │   └── user.go
+│   ├── repositories/
+│   │   └── user_repository.go
+│   ├── routers/
+│   │   └── user_router.go
+│   ├── usecases/
+│   │   ├── auth_usecase.go
+│   │   └── user_usecase.go
+│   └── utils/
+│       ├── paginate_response.go
+│       ├── pagination.go
+│       ├── response.go
+│       └── validation.go
 ```
 
 ## Configuration
