@@ -1,6 +1,9 @@
 
 # GoBlog
 
+[![Go Build Status](https://github.com/solanoize/goblog/actions/workflows/go.yml/badge.svg)](https://github.com/solanoize/goblog/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/solanoize/goblog)](https://goreportcard.com/report/github.com/solanoize/goblog)
+
 A simple blogging application API built with Go.
 
 ## Features
