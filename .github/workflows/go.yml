@@ -1,7 +1,4 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: Go
+name: Go Build & Check
 
 on:
   push:
@@ -10,16 +7,23 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5 # Pakai v5, lebih stabil & cache-nya lebih jago
       with:
-        go-version: '1.20'
+        go-version: '1.23' # Update ke versi yang lebih modern (minimal 1.22/1.23)
+        cache: true        # Aktifkan cache biar build berikutnya lebih ngebut
+
+    - name: Install Dependencies
+      run: go mod download # Pastikan semua module ketarik dulu
+
+    - name: Verify Modules
+      run: go mod tidy && git diff --exit-code # Cek apakah go.mod lo udah rapi
 
     - name: Build
       run: go build -v ./...
