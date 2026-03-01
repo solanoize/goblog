@@ -26,7 +26,7 @@ type authMiddleware struct {
 func (a *authMiddleware) IsActiveUser() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			dto, ok := r.Context().Value("dto").(dtos.UserResponseDTO)
+			dto, ok := r.Context().Value("user_context_dto").(dtos.UserContextDTO)
 
 			if !ok {
 				w.Header().Set("Content-Type", "application/json")
@@ -51,10 +51,10 @@ func (a *authMiddleware) IsActiveUser() func(http.Handler) http.Handler {
 func (a *authMiddleware) IsAdminOnly() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var userResponseDTO dtos.UserResponseDTO
+			var userContextDTO dtos.UserContextDTO
 			var ok bool
 
-			userResponseDTO, ok = r.Context().Value("dto").(dtos.UserResponseDTO)
+			userContextDTO, ok = r.Context().Value("user_context_dto").(dtos.UserContextDTO)
 
 			if !ok {
 				w.Header().Set("Content-Type", "application/json")
@@ -63,14 +63,14 @@ func (a *authMiddleware) IsAdminOnly() func(http.Handler) http.Handler {
 				return
 			}
 
-			if !userResponseDTO.Active {
+			if !userContextDTO.Active {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
 				json.NewEncoder(w).Encode(map[string]string{"detail": "Akses ditolak karena akun tidak aktif"})
 				return
 			}
 
-			if !userResponseDTO.IsAdmin {
+			if !userContextDTO.IsAdmin {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
 				json.NewEncoder(w).Encode(map[string]string{"detail": "Akses ditolak karena bukan admin"})
@@ -87,7 +87,7 @@ func (a *authMiddleware) IsAuthenticated() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var parts []string
-			var userResponseDTO dtos.UserResponseDTO
+			var userContextDTO dtos.UserContextDTO
 			var authHeader string
 			var err error
 			var tokenString string
@@ -125,7 +125,7 @@ func (a *authMiddleware) IsAuthenticated() func(http.Handler) http.Handler {
 				return
 			}
 
-			userResponseDTO, err = a.UserUseCase.Me(userID)
+			userContextDTO, err = a.UserUseCase.MeForContext(userID)
 
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
@@ -135,7 +135,8 @@ func (a *authMiddleware) IsAuthenticated() func(http.Handler) http.Handler {
 			}
 
 			var ctx context.Context
-			ctx = context.WithValue(r.Context(), "dto", userResponseDTO)
+			a.Logger.Println(userContextDTO)
+			ctx = context.WithValue(r.Context(), "user_context_dto", userContextDTO)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)

@@ -2,29 +2,37 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
+	"github.com/solanoize/goblog/internal/controllers"
+	"github.com/solanoize/goblog/internal/middlewares"
 	"github.com/solanoize/goblog/internal/models"
+	"github.com/solanoize/goblog/internal/repositories"
 	"github.com/solanoize/goblog/internal/routers"
+	"github.com/solanoize/goblog/internal/usecases"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func GetLogger() *log.Logger {
-	var file *os.File
-	var err error
-
-	file, err = os.OpenFile("error.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	// Ganti nama file biar lebih umum
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	return log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+	// 1. Prefix dikosongin aja ""
+	// 2. Tambahin io.MultiWriter biar log muncul di terminal DAN file sekaligus
+	multiWriter := io.MultiWriter(os.Stdout, file)
+
+	return log.New(multiWriter, "", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 func GetDB() *gorm.DB {
@@ -62,22 +70,45 @@ func GetDB() *gorm.DB {
 func main() {
 	var err error
 	err = godotenv.Load()
+	var port string = os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "5000" // Default port kalau env kosong
+	}
 	var db *gorm.DB = GetDB()
 	var logger *log.Logger = GetLogger()
-	var router *chi.Mux = chi.NewRouter()
+	var mainRouter *chi.Mux = chi.NewRouter()
+
+	mainRouter.Use(middleware.CleanPath)    // Otomatis ngerapiin // jadi /
+	mainRouter.Use(middleware.StripSlashes) // /posts/ jadi /posts otomatis
 
 	if err != nil {
 		logger.Fatal(".env file not found, using system env")
 	}
 
-	err = db.AutoMigrate(&models.User{})
+	err = db.AutoMigrate(&models.User{}, &models.Post{})
 	if err != nil {
 		logger.Fatal("Failed to migrate database: ", err)
 	}
 
-	var userRouter routers.UserRouter = routers.NewUserRouter(db, logger)
-	router.Mount("/", userRouter.Register())
+	// var userRouter routers.UserRouter = routers.NewUserRouter(db, logger)
+	// router.Mount("/", userRouter.Register())
 
-	fmt.Printf("Server running on port %s\n", os.Getenv("SERVER_PORT"))
-	http.ListenAndServe(os.Getenv("SERVER_PORT"), router)
+	// USER DEPENDENCY INJECTION
+	var userRepository repositories.UserRepository = repositories.NewUserRepository(db)
+	var userUseCase usecases.UserUseCase = usecases.NewUserUseCase(logger, userRepository)
+	var userController controllers.UserController = controllers.NewUserController(userUseCase)
+	var authMiddleware middlewares.AuthMiddleware = middlewares.NewAuthMiddleware(logger, userUseCase)
+
+	// POST DEPENDENCY INJECTION
+	var postRepository repositories.PostRepository = repositories.NewPostRespository(db)
+	var postUseCase usecases.PostUseCase = usecases.NewPostUseCase(logger, postRepository)
+	var postController controllers.PostController = controllers.NewPostController(postUseCase)
+
+	routers.NewUserRouter(mainRouter, authMiddleware, userController).Register()
+	routers.NewPostRouter(mainRouter, authMiddleware, postController).Register()
+
+	logger.Printf("Server running on port %s\n", port)
+	if err = http.ListenAndServe(":"+port, mainRouter); err != nil {
+		logger.Fatal("Server failed to start: ", err)
+	}
 }

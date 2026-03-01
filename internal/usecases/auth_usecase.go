@@ -87,7 +87,6 @@ func (a *authUseCase) ParseToken(tokenString string) (uint, error) {
 	}
 
 	uid, ok = uidAny.(float64)
-	a.Logger.Println(uint(uid))
 	if !ok {
 		a.Logger.Println("Invalid user id type.")
 		return 0, errors.New("Invalid user id type.")

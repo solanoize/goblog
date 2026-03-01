@@ -14,6 +14,7 @@ type UserUseCase interface {
 	Register(userRegisterDTO dtos.UserRegisterDTO) (dtos.UserResponseDTO, error)
 	SignIn(userSignInDTO dtos.UserSignInDTO) (string, error)
 	Me(id uint) (dtos.UserResponseDTO, error)
+	MeForContext(id uint) (dtos.UserContextDTO, error)
 	GetAuthUseCase() AuthUseCase
 	All(page int, limit int, search string) ([]dtos.UserResponseDTO, int64, error)
 }
@@ -24,16 +25,31 @@ type userUseCase struct {
 	AuthUseCase    AuthUseCase
 }
 
+// MeForContext implements [UserUseCase].
+func (u *userUseCase) MeForContext(id uint) (dtos.UserContextDTO, error) {
+	var err error
+	var user models.User
+	var userContextDTO dtos.UserContextDTO
+
+	user, err = u.UserRepository.FindById(id)
+	userContextDTO = mappers.NewUserContextMapper().ToDTO(user)
+	if err != nil {
+		u.Logger.Println(err)
+		return userContextDTO, errors.New("User tidak ditemukan.")
+	}
+
+	return userContextDTO, err
+}
+
 // All implements [UserUseCase].
 func (u *userUseCase) All(page int, limit int, search string) ([]dtos.UserResponseDTO, int64, error) {
 	var err error
 	var users []models.User
 	var count int64
 	var userResponseDTOS []dtos.UserResponseDTO
-	var userResponseMapper mappers.UserResponseMapper
 
 	users, count, err = u.UserRepository.FindAll(page, limit, search)
-	userResponseDTOS = userResponseMapper.ToDTOS(users)
+	userResponseDTOS = mappers.NewUserResponseMapper().ToDTOS(users)
 	if err != nil {
 		return userResponseDTOS, count, errors.New("Terjadi kesalahan saat mengambil data user.")
 	}
@@ -50,11 +66,10 @@ func (u *userUseCase) GetAuthUseCase() AuthUseCase {
 func (u *userUseCase) Me(id uint) (dtos.UserResponseDTO, error) {
 	var err error
 	var user models.User
-	var userResponseMapper mappers.UserResponseMapper
 	var userResponseDTO dtos.UserResponseDTO
 
 	user, err = u.UserRepository.FindById(id)
-	userResponseDTO = userResponseMapper.ToDTO(user)
+	userResponseDTO = mappers.NewUserResponseMapper().ToDTO(user)
 	if err != nil {
 		u.Logger.Println(err)
 		return userResponseDTO, errors.New("User tidak ditemukan.")
@@ -68,7 +83,7 @@ func (u *userUseCase) Register(userRegisterDTO dtos.UserRegisterDTO) (dtos.UserR
 	var err error
 	var userResponseDTO dtos.UserResponseDTO
 	var userRegisterMapper mappers.UserRegisterMapper
-	var userResponseMapper mappers.UserResponseMapper
+
 	var user models.User
 
 	userRegisterDTO.Password, err = u.AuthUseCase.PassowrdHash(userRegisterDTO.Password)
@@ -77,7 +92,7 @@ func (u *userUseCase) Register(userRegisterDTO dtos.UserRegisterDTO) (dtos.UserR
 	}
 
 	user, err = u.UserRepository.Create(userRegisterMapper.ToModel(userRegisterDTO))
-	userResponseDTO = userResponseMapper.ToDTO(user)
+	userResponseDTO = mappers.NewUserResponseMapper().ToDTO(user)
 	if err != nil {
 		u.Logger.Println(err)
 		return userResponseDTO, errors.New("User gagal dibuat, pastikan user belum pernah mendaftar sebelumnya.")

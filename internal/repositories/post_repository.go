@@ -22,7 +22,14 @@ type postRepository struct {
 
 // Create implements [PostRepository].
 func (p *postRepository) Create(ctx context.Context, post models.Post) (models.Post, error) {
-	panic("unimplemented")
+	var err error
+	err = p.DB.Create(&post).Error
+
+	if err != nil {
+		return post, err
+	}
+	err = p.DB.Preload("User").First(&post, post.ID).Error
+	return post, err
 }
 
 // Delete implements [PostRepository].

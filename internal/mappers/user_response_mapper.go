@@ -5,10 +5,27 @@ import (
 	"github.com/solanoize/goblog/internal/models"
 )
 
-type UserResponseMapper struct {
+type UserResponseMapper interface {
+	ToDTO(user models.User) dtos.UserResponseDTO
+	ToDTOS(users []models.User) []dtos.UserResponseDTO
+	ToModel(userResponseDTO dtos.UserResponseDTO) models.User
 }
 
-func (m *UserResponseMapper) ToDTO(user models.User) dtos.UserResponseDTO {
+type userResponseMapper struct {
+}
+
+// ToModel implements [UserResponseMapper].
+func (m *userResponseMapper) ToModel(userResponseDTO dtos.UserResponseDTO) models.User {
+	return models.User{
+		Username: userResponseDTO.Username,
+		Email:    userResponseDTO.Email,
+		IsAdmin:  userResponseDTO.IsAdmin,
+		IsStaff:  userResponseDTO.IsStaff,
+		Active:   userResponseDTO.Active,
+	}
+}
+
+func (m *userResponseMapper) ToDTO(user models.User) dtos.UserResponseDTO {
 	return dtos.UserResponseDTO{
 		Username:  user.Username,
 		Email:     user.Email,
@@ -20,7 +37,7 @@ func (m *UserResponseMapper) ToDTO(user models.User) dtos.UserResponseDTO {
 	}
 }
 
-func (m *UserResponseMapper) ToDTOS(users []models.User) []dtos.UserResponseDTO {
+func (m *userResponseMapper) ToDTOS(users []models.User) []dtos.UserResponseDTO {
 	var userResponseDTOS []dtos.UserResponseDTO = make([]dtos.UserResponseDTO, 0, len(users))
 	var user models.User
 
@@ -29,4 +46,8 @@ func (m *UserResponseMapper) ToDTOS(users []models.User) []dtos.UserResponseDTO 
 	}
 
 	return userResponseDTOS
+}
+
+func NewUserResponseMapper() UserResponseMapper {
+	return &userResponseMapper{}
 }
