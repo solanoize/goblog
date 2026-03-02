@@ -49,6 +49,14 @@ func NewPagination(r *http.Request) Pagination {
 	limit, _ = strconv.Atoi(r.URL.Query().Get("limit"))
 	page, _ = strconv.Atoi(r.URL.Query().Get("page"))
 
+	if page <= 0 {
+		page = 1
+	}
+
+	if limit <= 0 {
+		limit = 10
+	}
+
 	return &pagination{
 		request: r,
 		limit:   limit,
