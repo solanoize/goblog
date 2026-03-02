@@ -1,29 +1,31 @@
-name: Go Build & Check
+name: Release
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5 # Pakai v5, lebih stabil & cache-nya lebih jago
-      with:
-        go-version: '1.25.6' # Update ke versi yang lebih modern (minimal 1.22/1.23)
-        cache: true        # Aktifkan cache biar build berikutnya lebih ngebut
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.6'
 
-    - name: Install Dependencies
-      run: go mod download # Pastikan semua module ketarik dulu
+      - run: go mod download
 
-    - name: Verify Modules
-      run: go mod tidy && git diff --exit-code # Cek apakah go.mod lo udah rapi
+      - run: GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o goblog-linux-amd64 main.go
 
-    - name: Build
-      run: go build -v ./...
+      - run: GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o goblog-windows-amd64.exe main.go
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            goblog-linux-amd64
+            goblog-windows-amd64.exe
