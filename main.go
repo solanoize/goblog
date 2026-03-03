@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/solanoize/goblog/internal/apps"
 	"github.com/solanoize/goblog/internal/config"
+	"github.com/solanoize/goblog/internal/globals"
 )
 
 func main() {
@@ -17,9 +17,9 @@ func main() {
 		}
 	}
 
-	db := config.Postgre()
-	logger := config.Logging()
-	mainRouter := config.Router()
+	// db := config.Postgre()
+	// logger := config.Logging()
+	// mainRouter := config.Router()
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
@@ -29,11 +29,19 @@ func main() {
 		appEnv = "development (default)"
 	}
 
-	bootstrap := apps.NewBootstrap(db, logger, mainRouter)
+	// bootstrap := apps.NewBootstrap(db, logger, mainRouter)
 
-	bootstrap.Wire()
-	bootstrap.Migrate()
-	bootstrap.Routing()
+	// bootstrap.Wire()
+	// bootstrap.Migrate()
+	// bootstrap.Routing()
 
-	config.Server(appEnv, port, mainRouter, logger)
+	// config.Server(appEnv, port, mainRouter, logger)
+
+	db := config.Postgre()
+	globals.GlobalDB = db
+	logger := config.Logging()
+	router := config.Router()
+
+	config.Bootstrap(db, logger, router)
+	config.Server(appEnv, port, router, logger)
 }

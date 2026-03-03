@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func RenderJSON(w http.ResponseWriter, status int, payload any) {
+func JSONRender(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if payload != nil {
@@ -13,42 +13,42 @@ func RenderJSON(w http.ResponseWriter, status int, payload any) {
 	}
 }
 
-func RenderError(w http.ResponseWriter, status int, message any) {
-	RenderJSON(w, status, map[string]any{"detail": message})
+func ErrorRender(w http.ResponseWriter, status int, message any) {
+	JSONRender(w, status, map[string]any{"detail": message})
 }
 
-func RenderOK(w http.ResponseWriter, payload any) {
-	RenderJSON(w, http.StatusOK, payload)
+func OKRender(w http.ResponseWriter, payload any) {
+	JSONRender(w, http.StatusOK, payload)
 }
 
-func RenderCreated(w http.ResponseWriter, payload any) {
-	RenderJSON(w, http.StatusCreated, payload)
+func CreatedRender(w http.ResponseWriter, payload any) {
+	JSONRender(w, http.StatusCreated, payload)
 }
 
-func RenderNoContent(w http.ResponseWriter) {
+func NoContentRender(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func RenderBadRequest(w http.ResponseWriter, message any) {
-	RenderError(w, http.StatusBadRequest, message)
+func BadRequestRender(w http.ResponseWriter, message any) {
+	ErrorRender(w, http.StatusBadRequest, message)
 }
 
-func RenderUnauthorized(w http.ResponseWriter, message any) {
-	RenderError(w, http.StatusUnauthorized, message)
+func UnauthorizedRender(w http.ResponseWriter, message any) {
+	ErrorRender(w, http.StatusUnauthorized, message)
 }
 
-func RenderForbidden(w http.ResponseWriter, message any) {
-	RenderError(w, http.StatusForbidden, message)
+func ForbiddenRender(w http.ResponseWriter, message any) {
+	ErrorRender(w, http.StatusForbidden, message)
 }
 
-func RenderNotFound(w http.ResponseWriter, message any) {
-	RenderError(w, http.StatusNotFound, message)
+func NotFoundRender(w http.ResponseWriter, message any) {
+	ErrorRender(w, http.StatusNotFound, message)
 }
 
-func RenderConflict(w http.ResponseWriter, message any) {
-	RenderError(w, http.StatusConflict, message)
+func ConflictRender(w http.ResponseWriter, message any) {
+	ErrorRender(w, http.StatusConflict, message)
 }
 
-func RenderInternalServerError(w http.ResponseWriter, message any) {
-	RenderError(w, http.StatusInternalServerError, message)
+func InternalServerErrorRender(w http.ResponseWriter, message any) {
+	ErrorRender(w, http.StatusInternalServerError, message)
 }
